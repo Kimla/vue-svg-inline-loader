@@ -12,7 +12,6 @@ const crypto = require("crypto");
 const { readFileSync } = require("fs");
 const { getOptions } = require("loader-utils");
 const validateOptions = require("schema-utils");
-const SVGO = require("svgo");
 
 /* define default options object */
 const DEFAULT_OPTIONS = freeze({
@@ -28,7 +27,6 @@ const DEFAULT_OPTIONS = freeze({
 	removeAttributes: ["alt", "src"],
 	md5: true,
 	xhtml: false,
-	svgo: { plugins: [ { cleanupAttrs: true } ] }
 });
 
 /* define validation schema object for options */
@@ -59,13 +57,6 @@ const DEFAULT_OPTIONS_SCHEMA = freeze({
 		removeAttributes: { type: "array" },
 		md5: { type: "boolean" },
 		xhtml: { type: "boolean" },	
-		svgo: {
-			type: "object",
-			properties: {
-				plugins: { type: "array" }
-			},
-			additionalProperties: false
-		}
 	},
 	additionalProperties: false
 });
@@ -136,9 +127,6 @@ module.exports = function(content) {
 	const PATTERN_INLINE_KEYWORD = new RegExp(`\\s+(?:data-)?${options.inline.keyword}\\s+`, "i");
 	const PATTERN_SPRITE_KEYWORD = new RegExp(`\\s+(?:data-)?${options.sprite.keyword}\\s+`, "i");
 
-	/* initialize svgo */
-	const svgo = new SVGO(options.svgo);
-
 	/* create empty symbols set */
 	const symbols = new Set();
 
@@ -170,13 +158,6 @@ module.exports = function(content) {
 			file.content = readFileSync(file.path, { encoding: "utf-8" });
 		} catch(error) {
 			throw new Error(`File ${file.path} does not exist.`);
-		}
-
-		/* process file content with svgo */
-		try {
-			file.content = (await svgo.optimize(file.content, { path: file.path })).data || file.content;
-		} catch(error) {
-			throw new Error(`SVGO for ${file.path} failed.`);
 		}
 
 		/* check if svg content is not empty */
